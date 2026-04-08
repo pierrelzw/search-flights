@@ -10,11 +10,9 @@ search-flights is a **Claude Code skill** that searches and compares flight pric
 
 ```
 SKILL.md                      # Entry point: parse user input → run script → present results
+run.sh                        # Wrapper: auto-creates .venv, then exec's Python script
 scripts/
   search_flights.py           # Core search engine (flexible/exact/one-way modes)
-search_flight/
-  resolve.py                  # City/airport name resolution
-  format.py                   # Result formatting utilities
 tests/                        # Unit tests (no API calls)
 .claude-plugin/
   plugin.json                 # Plugin metadata (version, author, keywords)
@@ -54,8 +52,8 @@ Plugin metadata lives in `.claude-plugin/plugin.json`. This is the canonical ver
 
 ## Key Rules
 
-- Scripts must run with `.venv/bin/python3`, never system Python.
-- If `.venv` does not exist, create it first: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`
+- Always run scripts via `bash run.sh <args>`, which auto-creates `.venv` on first use.
+- For direct Python access (e.g., tests), use `.venv/bin/python3`, never system Python.
 - City/airport mapping is handled by the script, not by Claude — Claude only converts natural language to structured parameters.
 
 ## Testing
