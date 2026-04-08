@@ -7,7 +7,7 @@ description: |
   "回国机票", "买票", "订机票", or wants to compare flight prices.
 user-invocable: true
 allowed-tools:
-  - Bash(${CLAUDE_SKILL_DIR}/.venv/bin/python3 ${CLAUDE_SKILL_DIR}/scripts/*)
+  - Bash(cd ${CLAUDE_SKILL_DIR} && bash run.sh *)
 argument-hint: "<natural language flight search request>"
 ---
 
@@ -31,7 +31,7 @@ The user can describe their needs in **natural language** (Chinese or English). 
 ### 1. Flexible Date Range (compare across dates)
 When the user gives a travel window and trip duration range:
 ```bash
-${CLAUDE_SKILL_DIR}/.venv/bin/python3 ${CLAUDE_SKILL_DIR}/scripts/search_flights.py \
+cd ${CLAUDE_SKILL_DIR} && bash run.sh \
   <origin> <destination> \
   --from <YYYY-MM-DD> --to <YYYY-MM-DD> \
   --min-days <N> --max-days <N> \
@@ -41,7 +41,7 @@ ${CLAUDE_SKILL_DIR}/.venv/bin/python3 ${CLAUDE_SKILL_DIR}/scripts/search_flights
 ### 2. Exact Dates (specific departure and return)
 When the user specifies exact travel dates:
 ```bash
-${CLAUDE_SKILL_DIR}/.venv/bin/python3 ${CLAUDE_SKILL_DIR}/scripts/search_flights.py \
+cd ${CLAUDE_SKILL_DIR} && bash run.sh \
   <origin> <destination> \
   --depart <YYYY-MM-DD> --return <YYYY-MM-DD> \
   [--max-stops <N>] [--top <N>]
@@ -50,7 +50,7 @@ ${CLAUDE_SKILL_DIR}/.venv/bin/python3 ${CLAUDE_SKILL_DIR}/scripts/search_flights
 ### 3. One-Way
 When the user wants a one-way flight:
 ```bash
-${CLAUDE_SKILL_DIR}/.venv/bin/python3 ${CLAUDE_SKILL_DIR}/scripts/search_flights.py \
+cd ${CLAUDE_SKILL_DIR} && bash run.sh \
   <origin> <destination> \
   --depart <YYYY-MM-DD> --one-way \
   [--max-stops <N>] [--top <N>]
@@ -97,11 +97,6 @@ The script runs:
 - **Flexible mode**: Phase 1 (coarse date scan) → Phase 2 (detail search on top candidates)
 - **Exact mode**: Phase 2 only (detail search for the specific dates)
 - **One-way**: Direct one-way flight search
-
-If the script fails with an import error, create the venv:
-```bash
-cd ${CLAUDE_SKILL_DIR} && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-```
 
 ### Step 3: Present Results
 
