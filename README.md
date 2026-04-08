@@ -5,10 +5,8 @@ A Claude Code skill that searches and compares flight prices using Google Flight
 ## Install
 
 ```bash
-git clone https://github.com/pierrezhiwei/search-flights.git
-cd search-flights
-bash setup.sh
-ln -s "$(pwd)" ~/.claude/skills/search-flights
+/plugin marketplace add pierrelzw/zhiwei-skills
+/plugin install search-flights@pierrelzw
 ```
 
 ## Usage
