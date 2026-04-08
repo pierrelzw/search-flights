@@ -1,6 +1,6 @@
 {
   "name": "search-flights",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Search and compare flight prices using Google Flights data — bilingual Chinese/English",
   "author": { "name": "pierrelzw" },
   "repository": "https://github.com/pierrelzw/search-flights",
