@@ -6,5 +6,5 @@
   "repository": "https://github.com/pierrelzw/search-flights",
   "license": "MIT",
   "keywords": ["flights", "travel", "google-flights", "price-comparison", "bilingual"],
-  "skills": ["./"]
+  "skills": ["./SKILL.md"]
 }
