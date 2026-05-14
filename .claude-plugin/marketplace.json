@@ -1,0 +1,30 @@
+{
+  "name": "search-flights",
+  "owner": {
+    "name": "pierrelzw"
+  },
+  "metadata": {
+    "description": "Single-plugin marketplace for search-flights"
+  },
+  "plugins": [
+    {
+      "name": "search-flights",
+      "source": "./.",
+      "description": "Search and compare flight prices using Google Flights data — bilingual Chinese/English",
+      "version": "0.1.1",
+      "author": {
+        "name": "pierrelzw"
+      },
+      "repository": "https://github.com/pierrelzw/search-flights",
+      "license": "MIT",
+      "keywords": [
+        "flights",
+        "travel",
+        "google-flights",
+        "price-comparison",
+        "bilingual"
+      ],
+      "category": "travel"
+    }
+  ]
+}
