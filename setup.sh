@@ -10,6 +10,3 @@ echo "Installing dependencies..."
 
 echo ""
 echo "Setup complete!"
-echo ""
-echo "To use this skill in Claude Code, symlink it:"
-echo "  ln -s $(pwd) ~/.claude/skills/search-flights"

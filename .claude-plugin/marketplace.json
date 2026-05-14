@@ -11,7 +11,7 @@
       "name": "search-flights",
       "source": "./.",
       "description": "Search and compare flight prices using Google Flights data — bilingual Chinese/English",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": {
         "name": "pierrelzw"
       },

@@ -7,7 +7,7 @@ description: |
   "回国机票", "买票", "订机票", or wants to compare flight prices.
 user-invocable: true
 allowed-tools:
-  - Bash(cd ${CLAUDE_SKILL_DIR} && bash run.sh *)
+  - Bash(cd ${CLAUDE_PLUGIN_ROOT} && bash run.sh *)
 argument-hint: "<natural language flight search request>"
 ---
 
@@ -31,7 +31,7 @@ The user can describe their needs in **natural language** (Chinese or English). 
 ### 1. Flexible Date Range (compare across dates)
 When the user gives a travel window and trip duration range:
 ```bash
-cd ${CLAUDE_SKILL_DIR} && bash run.sh \
+cd ${CLAUDE_PLUGIN_ROOT} && bash run.sh \
   <origin> <destination> \
   --from <YYYY-MM-DD> --to <YYYY-MM-DD> \
   --min-days <N> --max-days <N> \
@@ -41,7 +41,7 @@ cd ${CLAUDE_SKILL_DIR} && bash run.sh \
 ### 2. Exact Dates (specific departure and return)
 When the user specifies exact travel dates:
 ```bash
-cd ${CLAUDE_SKILL_DIR} && bash run.sh \
+cd ${CLAUDE_PLUGIN_ROOT} && bash run.sh \
   <origin> <destination> \
   --depart <YYYY-MM-DD> --return <YYYY-MM-DD> \
   [--max-stops <N>] [--top <N>]
@@ -50,7 +50,7 @@ cd ${CLAUDE_SKILL_DIR} && bash run.sh \
 ### 3. One-Way
 When the user wants a one-way flight:
 ```bash
-cd ${CLAUDE_SKILL_DIR} && bash run.sh \
+cd ${CLAUDE_PLUGIN_ROOT} && bash run.sh \
   <origin> <destination> \
   --depart <YYYY-MM-DD> --one-way \
   [--max-stops <N>] [--top <N>]
