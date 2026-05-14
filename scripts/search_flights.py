@@ -28,6 +28,8 @@ from fli.models import (
 )
 from fli.search import SearchDates, SearchFlights
 
+import flyai_source
+
 
 CITY_TO_IATA = {
     "vancouver": "YVR", "温哥华": "YVR",
@@ -329,6 +331,99 @@ def search_oneway(origin_code, dest_code, depart_date, max_stops_str, top_n, max
     return results
 
 
+def _row_is_stub(row: dict) -> bool:
+    return row.get("price", 0) <= 0 or row.get("airline_out") in (None, "", "Unknown")
+
+
+def _should_override(fli_row: dict, alt: dict) -> bool:
+    """Override fli row with flyai data when fli is a stub OR flyai is cheaper.
+
+    For non-stub rows, require flyai to be meaningfully cheaper (>5%) to avoid
+    flapping between two sources on near-identical prices.
+    """
+    if _row_is_stub(fli_row):
+        return True
+    fli_price = fli_row.get("price", 0)
+    if fli_price <= 0:
+        return True
+    return alt["price_usd"] < fli_price * 0.95
+
+
+def enrich_roundtrip_with_flyai(results, origin_code, dest_code, max_stops_int):
+    """Fill stub rows from flyai, and override fli rows where flyai is cheaper."""
+    if not results or not flyai_source.is_available():
+        return results
+    filled = corrected = 0
+    for row in results:
+        alt = flyai_source.cheapest_roundtrip(
+            origin_code, dest_code, row["departure"], row["return"], max_stops_int
+        )
+        if not alt or not _should_override(row, alt):
+            continue
+        was_stub = _row_is_stub(row)
+        if not was_stub:
+            print(
+                f"  flyai: {row['departure']}→{row['return']} "
+                f"${row['price']:.0f} → ${alt['price_usd']} (Fliggy cheaper)",
+                file=sys.stderr,
+            )
+        row["price"] = alt["price_usd"]
+        row["stops_out"] = alt["stops_out"]
+        row["stops_ret"] = alt["stops_ret"]
+        row["airline_out"] = alt["airline_out"]
+        row["airline_ret"] = alt["airline_ret"]
+        row["via_out"] = alt["via_out"]
+        row["via_ret"] = alt["via_ret"]
+        row["duration_out_hrs"] = alt["duration_out_hrs"]
+        row["duration_ret_hrs"] = alt["duration_ret_hrs"]
+        row["source"] = "flyai"
+        if was_stub:
+            filled += 1
+        else:
+            corrected += 1
+    if filled or corrected:
+        print(f"  flyai: filled {filled}, corrected {corrected} row(s)", file=sys.stderr)
+    results.sort(key=lambda x: x["price"])
+    return results
+
+
+def enrich_oneway_with_flyai(results, origin_code, dest_code, max_stops_int):
+    if not results or not flyai_source.is_available():
+        return results
+    filled = corrected = 0
+    for row in results:
+        alt = flyai_source.cheapest_oneway(
+            origin_code, dest_code, row["departure"], max_stops_int
+        )
+        if not alt:
+            continue
+        is_stub = row.get("price", 0) <= 0 or row.get("airline") in (None, "", "Unknown")
+        fli_price = row.get("price", 0)
+        cheaper = fli_price > 0 and alt["price_usd"] < fli_price * 0.95
+        if not (is_stub or cheaper):
+            continue
+        if cheaper and not is_stub:
+            print(
+                f"  flyai: {row['departure']} ${fli_price:.0f} → "
+                f"${alt['price_usd']} (Fliggy cheaper)",
+                file=sys.stderr,
+            )
+        row["price"] = alt["price_usd"]
+        row["stops"] = alt["stops_out"]
+        row["airline"] = alt["airline_out"]
+        row["via"] = alt["via_out"]
+        row["duration_hrs"] = alt["duration_out_hrs"]
+        row["source"] = "flyai"
+        if is_stub:
+            filled += 1
+        else:
+            corrected += 1
+    if filled or corrected:
+        print(f"  flyai: filled {filled}, corrected {corrected} row(s)", file=sys.stderr)
+    results.sort(key=lambda x: x["price"])
+    return results
+
+
 def _fallback_result(candidate, origin_code=None, dest_code=None, max_stops_int=None):
     result = {
         "departure": candidate["departure"],
@@ -545,6 +640,27 @@ def main():
 
         results = search_oneway(origin_code, dest_code, depart, args.max_stops, args.top, max_stops_int)
 
+        if not results and flyai_source.is_available():
+            print("fli returned nothing — trying flyai...", file=sys.stderr)
+            for alt in flyai_source.search_oneway(origin_code, dest_code, depart):
+                if max_stops_int is not None and alt["stops_out"] > max_stops_int:
+                    continue
+                results.append({
+                    "departure": alt["departure"],
+                    "price": alt["price_usd"],
+                    "currency": "USD",
+                    "stops": alt["stops_out"],
+                    "airline": alt["airline_out"],
+                    "via": alt["via_out"],
+                    "duration_hrs": alt["duration_out_hrs"],
+                    "booking_url": google_flights_url(origin_code, dest_code, depart, max_stops=max_stops_int),
+                    "source": "flyai",
+                })
+                if len(results) >= args.top:
+                    break
+
+        results = enrich_oneway_with_flyai(results, origin_code, dest_code, max_stops_int)
+
         # Discover airlines with missing pricing (reuses the same one-way search pattern)
         print("Checking airline coverage...", file=sys.stderr)
         _, unpriced = discover_airlines(origin_code, dest_code, depart, max_stops_int)
@@ -574,6 +690,7 @@ def main():
 
         print("Fetching flight details...", file=sys.stderr)
         results = phase2_detail_search(origin_code, dest_code, candidates, args.max_stops, args.top, max_stops_int)
+        results = enrich_roundtrip_with_flyai(results, origin_code, dest_code, max_stops_int)
 
         print("Checking airline coverage...", file=sys.stderr)
         _, unpriced = discover_airlines(origin_code, dest_code, args.depart, max_stops_int)
@@ -628,6 +745,7 @@ def main():
         # Phase 2
         print(f"\nPhase 2: Fetching details for top {args.top} candidates...", file=sys.stderr)
         results = phase2_detail_search(origin_code, dest_code, all_candidates, args.max_stops, args.top, max_stops_int)
+        results = enrich_roundtrip_with_flyai(results, origin_code, dest_code, max_stops_int)
 
         # Discover airlines with missing pricing (use first candidate's date)
         sample_date = sorted(all_candidates, key=lambda x: x["price"])[0]["departure"]

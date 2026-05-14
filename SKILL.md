@@ -13,6 +13,8 @@ argument-hint: "<natural language flight search request>"
 
 Search and compare flight prices across flexible date ranges, exact dates, or one-way.
 
+Primary data source: `fli` (Google Flights). When `fli` returns no flights for a date or returns rows with `price = 0`, the script falls back to `flyai` (Fliggy / 飞猪, CNY prices converted to USD) to fill the gap. `flyai` is optional — install via `npm i -g @fly-ai/flyai-cli` to enable.
+
 Parse the user's input: $ARGUMENTS
 
 The user can describe their needs in **natural language** (Chinese or English). Your job is to understand what they want and convert it to structured parameters for the script.
@@ -100,10 +102,12 @@ The script runs:
 
 ### Step 3: Present Results
 
-The script outputs a markdown table. Print it directly, then add:
+Use this response template:
 
-- **Best price**: highlight the cheapest option
-- **Price trends**: which weeks or trip lengths are cheaper (flexible mode)
-- **Tips**: highlight direct flights if they exist, even if slightly more expensive
+1. **Brief conclusion and recommendation** — one sentence naming the cheapest option, dates, and price
+2. **Top options** — the script's markdown table (print as-is); the `购票` column contains per-row booking links
+3. **Booking link** — standalone line for the top/cheapest result:
+   `[查看 Google Flights]({url})` where `{url}` is from the cheapest row's `购票` column
+4. **Notes** — 1–2 lines: holiday surges, visa reminders, direct vs. connecting trade-off
 
 End with: "需要调整搜索条件，或者查看更多细节吗？"
